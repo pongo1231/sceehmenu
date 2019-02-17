@@ -1,0 +1,11 @@
+﻿  main.cpp
+  menu.cpp
+c:\fivem\gtao\fivem.app\plugins\sceehmenu\sceehmenu\menu.cpp(38): warning C4267: "=": Konvertierung von "size_t" nach "short", Datenverlust möglich
+c:\fivem\gtao\fivem.app\plugins\sceehmenu\sceehmenu\menu.cpp(43): warning C4018: ">=": Konflikt zwischen "signed" und "unsigned"
+c:\fivem\gtao\fivem.app\plugins\sceehmenu\sceehmenu\menu.cpp(93): warning C4018: "<": Konflikt zwischen "signed" und "unsigned"
+  script.cpp
+c:\fivem\gtao\fivem.app\plugins\sceehmenu\sceehmenu\script.cpp(27): warning C4326: Der Rückgabetyp von "main" sollte "int" und nicht "void" sein
+  script_player.cpp
+  stdafx.cpp
+  util.cpp
+ScriptHookV.lib(ScriptHookV.dll) : fatal error LNK1112: Modul-Computertyp "x64" steht in Konflikt mit dem Zielcomputertyp "x86".
