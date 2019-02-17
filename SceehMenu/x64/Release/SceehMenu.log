@@ -1,9 +1,0 @@
-﻿  script.cpp
-c:\fivem\gtao\fivem.app\plugins\sceehmenu\sceehmenu\script.cpp(55): warning C4244: "Argument": Konvertierung von "float" in "int", möglicher Datenverlust
-c:\fivem\gtao\fivem.app\plugins\sceehmenu\sceehmenu\script.cpp(92): warning C4244: "Initialisierung": Konvertierung von "float" in "uint16_t", möglicher Datenverlust
-  Code wird generiert.
-  4 of 357 functions ( 1.1%) were compiled, the rest were copied from previous compilation.
-    0 functions were new in current compilation
-    1 functions had inline decision re-evaluated but remain unchanged
-  Codegenerierung ist abgeschlossen.
-  SceehMenu.vcxproj -> D:\SteamLibrary\steamapps\common\Grand Theft Auto V\SceehMenu.asi

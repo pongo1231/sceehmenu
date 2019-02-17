@@ -1,9 +1,0 @@
-#pragma once
-#include "vehicle_list.h"
-#include "scripthookv/inc/main.h"
-#include "scripthookv/inc/natives.h"
-#include <Windows.h>
-#include <TlHelp32.h>
-#include <Psapi.h>
-#include <algorithm>
-#include <vector>
