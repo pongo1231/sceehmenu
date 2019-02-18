@@ -14,25 +14,26 @@ enum menu_item_type
 struct menu_item
 {
 	menu_item(const char *label);
-	menu_item(const char *label, void(*action)(uint16_t));
 	menu_item(const char *label, bool state);
 	menu_item(const char *label, menu *submenu);
-	menu_item(const char *label, std::vector<float> values, uint8_t default_index = 0);
+	menu_item(const char *label, std::vector<float> values, int default_index = 0);
 	menu_item(const menu_item &other);
 	menu_item operator =(const menu_item &other);
 	~menu_item();
-	float slider_get_selected_value() const;
 
 	const char *label;
 	const menu_item_type type;
-	uint16_t values_index;
+	int values_index;
+	bool hovered = false;
+	bool selected = false;
 	union
 	{
-		void (*action)(uint16_t);
 		bool state;
 		menu *submenu;
 		std::vector<float> values;
 	};
+
+	float slider_get_selected_value() const;
 };
 
 class menu
@@ -51,8 +52,9 @@ public:
 
 private:
 	std::vector<menu_item*> menu_items;
-	uint16_t cursor;
-	uint16_t visibleTime;
+	int cursor;
+	int visibleTime;
+	menu_item *selected_item;
 
 	void draw_header() const;
 	void draw_items() const;

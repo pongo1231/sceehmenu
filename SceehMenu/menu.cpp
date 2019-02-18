@@ -9,23 +9,18 @@
 #define MENU_ITEM_HEIGHT .05f
 #define MENU_MAX_VISIBLE 5
 
-menu_item::menu_item(const char *label) : label(label), action(nullptr), type(MENU_ITEM_TYPE_ACTION) {}
-
-menu_item::menu_item(const char *label, void(*action)(uint16_t)) : label(label), action(action), type(MENU_ITEM_TYPE_ACTION) {}
+menu_item::menu_item(const char *label) : label(label), type(MENU_ITEM_TYPE_ACTION) {}
 
 menu_item::menu_item(const char *label, bool state) : label(label), state(state), type(MENU_ITEM_TYPE_TOGGLE) {}
 
 menu_item::menu_item(const char *label, menu *submenu) : label(label), submenu(submenu), type(MENU_ITEM_TYPE_SUBMENU) {}
 
-menu_item::menu_item(const char *label, std::vector<float> values, uint8_t default_index) : label(label), values(values), values_index(default_index), type(MENU_ITEM_TYPE_SLIDER) {}
+menu_item::menu_item(const char *label, std::vector<float> values, int default_index) : label(label), values(values), values_index(default_index), type(MENU_ITEM_TYPE_SLIDER) {}
 
 menu_item::menu_item(const menu_item &other) : label(other.label), type(other.type)
 {
 	switch (type)
 	{
-	case MENU_ITEM_TYPE_ACTION:
-		action = other.action;
-		break;
 	case MENU_ITEM_TYPE_TOGGLE:
 		state = other.state;
 		break;
@@ -82,9 +77,24 @@ void menu::clear_items()
 
 void menu::tick()
 {
+	for (menu_item *item : menu_items)
+	{
+		item->hovered = false;
+		item->selected = false;
+	}
+	if (selected_item)
+	{
+		selected_item->selected = true;
+		selected_item = nullptr;
+	}
+
 	if (visible)
 	{
 		visibleTime++;
+		if (!menu_items.empty())
+		{
+			menu_items[cursor]->hovered = true;
+		}
 		draw_header();
 		draw_items();
 	}
@@ -95,7 +105,9 @@ void menu::tick()
 void menu::handle_keyboard(DWORD key)
 {
 	if (visibleTime < 1) // Don't fetch input from submenu item enter
+	{
 		return;
+	}
 
 	bool handled = true;
 	switch (key)
@@ -107,7 +119,7 @@ void menu::handle_keyboard(DWORD key)
 		}
 		else
 		{
-			cursor = (short)menu_items.size() - 1;
+			cursor = (int) menu_items.size() - 1;
 		}
 		util::play_sound("NAV", "HUD_AMMO_SHOP_SOUNDSET");
 		break;
@@ -127,12 +139,6 @@ void menu::handle_keyboard(DWORD key)
 		menu_item *item = menu_items[cursor];
 		switch (item->type)
 		{
-		case MENU_ITEM_TYPE_ACTION:
-			if (item->action)
-			{
-				item->action(cursor);
-			}
-			break;
 		case MENU_ITEM_TYPE_TOGGLE:
 			item->state = !item->state;
 			break;
@@ -142,6 +148,7 @@ void menu::handle_keyboard(DWORD key)
 			visible = false;
 			break;
 		}
+		selected_item = item;
 		util::play_sound("SELECT", "HUD_FRONTEND_MP_SOUNDSET");
 		break;
 	}
@@ -162,7 +169,7 @@ void menu::handle_keyboard(DWORD key)
 			}
 			else
 			{
-				item->values_index = item->values.size() - 1;
+				item->values_index = (int) item->values.size() - 1;
 			}
 		}
 		break;
@@ -204,8 +211,8 @@ void menu::draw_header() const
 void menu::draw_items() const
 {
 	float new_y = MENU_POS_Y + MENU_HEADER_HEIGHT / 2 + MENU_ITEM_HEIGHT / 2;
-	uint16_t items_size = menu_items.size();
-	uint16_t bottom_dist = items_size - 1 - cursor;
+	int items_size = (int) menu_items.size();
+	int bottom_dist = items_size - 1 - cursor;
 	bool capped_up = cursor > MENU_MAX_VISIBLE;
 	bool capped_down = bottom_dist > MENU_MAX_VISIBLE;
 	if (capped_up)
@@ -214,21 +221,21 @@ void menu::draw_items() const
 		util::draw_text(MENU_POS_X, new_y - MENU_ITEM_HEIGHT / 3, 1.4f, "^");
 		new_y += MENU_ITEM_HEIGHT;
 	}
-	for (uint16_t i = 0; i < items_size; i++)
+	for (int i = 0; i < items_size; i++)
 	{
 		if (i < cursor - MENU_MAX_VISIBLE - (!capped_down ? MENU_MAX_VISIBLE - bottom_dist : 0) || i > cursor + MENU_MAX_VISIBLE + (!capped_up ? MENU_MAX_VISIBLE - cursor : 0))
 			continue;
 
 		menu_item *item = menu_items[i];
 
-		uint8_t shade = 60;
+		UCHAR shade = 60;
 		if (i == cursor)
 		{
 			shade = 120;
 		}
 		GRAPHICS::DRAW_RECT(MENU_POS_X, new_y, MENU_WIDTH, MENU_ITEM_HEIGHT, shade, shade, shade, 230);
 
-		int r = 255, g = 255, b = 255; // White
+		UCHAR r = 255, g = 255, b = 255; // White
 		switch (item->type)
 		{
 		case MENU_ITEM_TYPE_TOGGLE:

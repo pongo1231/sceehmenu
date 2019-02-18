@@ -19,6 +19,7 @@ menu_item *player_speedmultiplier = new menu_item("Speed Multiplier", std::vecto
 
 menu *vehicle_menu = new menu("Vehicle");
 menu *vehicle_spawn_menu = new menu("Spawn Vehicle");
+std::vector<menu_item*> vehicle_spawn_items;
 menu *vehicle_color_menu = new menu("Vehicle Color");
 menu_item *vehicle_color_red;
 menu_item *vehicle_color_green;
@@ -30,6 +31,7 @@ menu *world_time_menu = new menu("Time");
 menu_item *time_hour = new menu_item("Hour", std::vector<float>({ 0.f, 1.f, 2.f, 3.f, 4.f, 5.f, 6.f, 7.f, 8.f, 9.f, 10.f, 11.f, 12.f, 13.f, 14.f, 15.f, 16.f, 17.f, 18.f, 19.f, 20.f, 21.f, 22.f, 23.f }));
 menu_item *time_minute;
 menu_item *time_second;
+menu_item *time_apply = new menu_item("Apply Time");
 menu_item *time_freeze = new menu_item("Freeze Time", false);
 
 menu *misc_menu = new menu("Misc");
@@ -38,6 +40,11 @@ menu_item *settings_selectlastvehicle = new menu_item("Select Last Vehicle", fal
 
 static void playerlist_update()
 {
+	if (!playerlist_menu->visible)
+	{
+		return;
+	}
+
 	playerlist_menu->clear_items();
 	for (Player player = 0; player < 30; player++)
 	{
@@ -50,12 +57,12 @@ static void playerlist_update()
 	}
 }
 
-void set_time(uint16_t index = 0)
+void set_time()
 {
-	NETWORK::NETWORK_OVERRIDE_CLOCK_TIME(time_hour->slider_get_selected_value(), time_minute->slider_get_selected_value(), time_second->slider_get_selected_value());
+	NETWORK::NETWORK_OVERRIDE_CLOCK_TIME((int) time_hour->slider_get_selected_value(), (int) time_minute->slider_get_selected_value(), (int) time_second->slider_get_selected_value());
 }
 
-void spawn_vehicle(uint16_t index)
+void spawn_vehicle(int index)
 {
 	Hash veh_hash = vehicle_list[index];
 	STREAMING::REQUEST_MODEL(veh_hash);
@@ -65,17 +72,41 @@ void spawn_vehicle(uint16_t index)
 	}
 	Ped ped = PLAYER::PLAYER_PED_ID();
 	float ped_heading = ENTITY::GET_ENTITY_HEADING(ped);
-	Vector3 spawn_pos = ENTITY::GET_OFFSET_FROM_ENTITY_IN_WORLD_COORDS(ped, 2.f, 0.f, 0.f);
-	Vehicle veh = VEHICLE::CREATE_VEHICLE(veh_hash, spawn_pos.x, spawn_pos.y, spawn_pos.z, ped_heading, false, false);
+	Vector3 spawn_pos = ENTITY::GET_ENTITY_COORDS(ped, true);
+	Vehicle veh = VEHICLE::CREATE_VEHICLE(veh_hash, spawn_pos.x, spawn_pos.y, spawn_pos.z, ped_heading, false, true);
 	NETWORK::VEH_TO_NET(veh);
 	PED::SET_PED_INTO_VEHICLE(ped, veh, -1);
+	VEHICLE::SET_VEHICLE_ON_GROUND_PROPERLY(veh);
+	VEHICLE::SET_VEHICLE_ENGINE_ON(veh, true, true, true);
 	ENTITY::SET_VEHICLE_AS_NO_LONGER_NEEDED(&veh);
+	STREAMING::SET_MODEL_AS_NO_LONGER_NEEDED(veh_hash);
+}
+
+static void check_for_selections()
+{
+	if (time_apply->selected)
+	{
+		set_time();
+	}
+	else
+	{
+		for (int i = 0; i < vehicle_spawn_items.size(); i++)
+		{
+			menu_item *item = vehicle_spawn_items[i];
+			if (item->selected)
+			{
+				spawn_vehicle(i);
+				break;
+			}
+		}
+	}
 }
 
 static void tick()
 {
 	playerlist_update();
 	pool.tick();
+	check_for_selections();
 
 	Player player = PLAYER::PLAYER_ID();
 
@@ -89,9 +120,9 @@ static void tick()
 	if (ENTITY::DOES_ENTITY_EXIST(vehicle))
 	{
 		ENTITY::SET_ENTITY_INVINCIBLE(vehicle, vehicle_invincible->state ? true : false);
-		uint16_t r = vehicle_color_red->slider_get_selected_value(), g = vehicle_color_green->slider_get_selected_value(), b = vehicle_color_blue->slider_get_selected_value();
-		VEHICLE::SET_VEHICLE_CUSTOM_PRIMARY_COLOUR(vehicle, r, g, b);
-		VEHICLE::SET_VEHICLE_CUSTOM_SECONDARY_COLOUR(vehicle, r, g, b);
+		float r = vehicle_color_red->slider_get_selected_value(), g = vehicle_color_green->slider_get_selected_value(), b = vehicle_color_blue->slider_get_selected_value();
+		VEHICLE::SET_VEHICLE_CUSTOM_PRIMARY_COLOUR(vehicle, (int) r, (int) g, (int) b);
+		VEHICLE::SET_VEHICLE_CUSTOM_SECONDARY_COLOUR(vehicle, (int) r, (int) g, (int) b);
 	}
 
 	if (time_freeze->state)
@@ -124,7 +155,9 @@ static void init_menus()
 	for (Hash veh_hash : vehicle_list)
 	{
 		char *display_name = VEHICLE::GET_DISPLAY_NAME_FROM_VEHICLE_MODEL(veh_hash);
-		vehicle_spawn_menu->add_item(new menu_item(display_name, spawn_vehicle));
+		menu_item *item = new menu_item(display_name);
+		vehicle_spawn_menu->add_item(item);
+		vehicle_spawn_items.push_back(item);
 	}
 	pool.add_menu(vehicle_spawn_menu);
 	vehicle_menu->add_item(new menu_item("Color", vehicle_color_menu));
@@ -154,7 +187,7 @@ static void init_menus()
 	world_time_menu->add_item(time_minute);
 	time_second = new menu_item("Second", minute_second_values);
 	world_time_menu->add_item(time_second);
-	world_time_menu->add_item(new menu_item("Set Time", set_time));
+	world_time_menu->add_item(time_apply);
 	world_time_menu->add_item(time_freeze);
 	pool.add_menu(world_time_menu);
 	pool.add_menu(world_menu);
