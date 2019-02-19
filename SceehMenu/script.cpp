@@ -4,13 +4,13 @@
 #include "hooking.h"
 #include "vehicle_list.h"
 
-hooking mhooking;
 menu_pool pool;
 
 menu *main_menu = new menu("SceehMenu");
 
 menu *online_menu = new menu("Online");
 menu *playerlist_menu = new menu("Players");
+menu_item *online_kickall = new menu_item("Kick All");
 
 menu *player_menu = new menu("Player");
 menu_item *player_godmode = new menu_item("Godmode", false);
@@ -87,18 +87,28 @@ static void check_for_selections()
 	if (time_apply->selected)
 	{
 		set_time();
+		return;
 	}
-	else
+	for (int i = 0; i < vehicle_spawn_items.size(); i++)
 	{
-		for (int i = 0; i < vehicle_spawn_items.size(); i++)
+		menu_item *item = vehicle_spawn_items[i];
+		if (item->selected)
 		{
-			menu_item *item = vehicle_spawn_items[i];
-			if (item->selected)
+			spawn_vehicle(i);
+			return;
+		}
+	}
+	if (online_kickall->selected)
+	{
+		for (Player player = 0; player < 31; player++)
+		{
+			if (NETWORK::NETWORK_IS_PLAYER_ACTIVE(player) /*&& player != PLAYER::PLAYER_ID()*/)
 			{
-				spawn_vehicle(i);
-				break;
+				hooking::kick_player(player);
 			}
 		}
+		util::draw_notification("~g~Kicked everyone!");
+		return;
 	}
 }
 
@@ -113,7 +123,7 @@ static void tick()
 	Ped ped = PLAYER::PLAYER_PED_ID();
 	ENTITY::SET_ENTITY_INVINCIBLE(ped, player_godmode->state);
 	ENTITY::SET_ENTITY_VISIBLE(ped, !player_invisible->state, false);
-	//mhooking.set_player_speed(player_speedmultiplier->slider_get_selected_value());
+	//hooking::set_player_speedmtp(player_speedmultiplier->slider_get_selected_value());
 	PLAYER::SET_RUN_SPRINT_MULTIPLIER_FOR_PLAYER(player, player_speedmultiplier->slider_get_selected_value());
 
 	Vehicle vehicle = PED::GET_VEHICLE_PED_IS_IN(ped, settings_selectlastvehicle->state ? true : false);
@@ -142,6 +152,7 @@ static void init_menus()
 	pool.add_menu(main_menu);
 
 	online_menu->add_item(new menu_item("Players", playerlist_menu));
+	online_menu->add_item(online_kickall);
 	pool.add_menu(online_menu);
 	
 	pool.add_menu(playerlist_menu);
@@ -200,6 +211,7 @@ static void init_menus()
 
 void script_main()
 {
+	hooking::init_hooking();
 	init_menus();
 
 	srand(GetTickCount());
