@@ -96,7 +96,7 @@
     <TargetName>$(ProjectName)</TargetName>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-    <OutDir>D:\SteamLibrary\steamapps\common\Grand Theft Auto V</OutDir>
+    <OutDir>D:\SteamLibrary\steamapps\common\Grand Theft Auto V\</OutDir>
     <TargetExt>.asi</TargetExt>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">

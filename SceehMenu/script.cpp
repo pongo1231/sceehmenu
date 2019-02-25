@@ -24,6 +24,8 @@ menu *vehicle_color_menu = new menu("Vehicle Color");
 menu_item *vehicle_color_red;
 menu_item *vehicle_color_green;
 menu_item *vehicle_color_blue;
+menu_item *vehicle_color_apply = new menu_item("Apply Color");
+menu_item *vehicle_repair = new menu_item("Repair");
 menu_item *vehicle_invincible = new menu_item("Invincible", false);
 
 menu *world_menu = new menu("World");
@@ -33,10 +35,14 @@ menu_item *time_minute;
 menu_item *time_second;
 menu_item *time_apply = new menu_item("Apply Time");
 menu_item *time_freeze = new menu_item("Freeze Time", false);
+menu_item *world_killallpeds = new menu_item("Kill All Peds", false);
+menu_item *world_removeallpeds = new menu_item("Remove All Peds", false);
+menu_item *world_killallengines = new menu_item("Kill All Vehicle Engines", false);
+menu_item *world_removeallvehicles = new menu_item("Remove All Vehicles", false);
 
 menu *misc_menu = new menu("Misc");
 menu *misc_settings_menu = new menu("Settings");
-menu_item *settings_selectlastvehicle = new menu_item("Select Last Vehicle", false);
+menu_item *misc_settings_selectlastvehicle = new menu_item("Select Last Vehicle", false);
 
 static void playerlist_update()
 {
@@ -89,6 +95,7 @@ static void check_for_selections()
 		set_time();
 		return;
 	}
+
 	for (int i = 0; i < vehicle_spawn_items.size(); i++)
 	{
 		menu_item *item = vehicle_spawn_items[i];
@@ -98,6 +105,7 @@ static void check_for_selections()
 			return;
 		}
 	}
+
 	if (online_kickall->selected)
 	{
 		for (Player player = 0; player < 31; player++)
@@ -110,6 +118,27 @@ static void check_for_selections()
 		util::draw_notification("~g~Kicked everyone!");
 		return;
 	}
+
+	Vehicle player_veh = PED::GET_VEHICLE_PED_IS_IN(PLAYER::PLAYER_PED_ID(), misc_settings_selectlastvehicle->state ? true : false);
+
+	if (vehicle_color_apply->selected)
+	{
+		
+		if (ENTITY::DOES_ENTITY_EXIST(player_veh))
+		{
+			float r = vehicle_color_red->slider_get_selected_value(), g = vehicle_color_green->slider_get_selected_value(), b = vehicle_color_blue->slider_get_selected_value();
+			VEHICLE::SET_VEHICLE_CUSTOM_PRIMARY_COLOUR(player_veh, (UCHAR) r, (UCHAR) g, (UCHAR) b);
+			VEHICLE::SET_VEHICLE_CUSTOM_SECONDARY_COLOUR(player_veh, (UCHAR) r, (UCHAR) g, (UCHAR) b);
+		}
+	}
+
+	if (vehicle_repair->selected)
+	{
+		if (ENTITY::DOES_ENTITY_EXIST(player_veh))
+		{
+			VEHICLE::SET_VEHICLE_FIXED(player_veh);
+		}
+	}
 }
 
 static void tick()
@@ -119,25 +148,64 @@ static void tick()
 	check_for_selections();
 
 	Player player = PLAYER::PLAYER_ID();
+	Ped player_ped = PLAYER::PLAYER_PED_ID();
+	Vehicle player_veh = PED::GET_VEHICLE_PED_IS_IN(player_ped, misc_settings_selectlastvehicle->state ? true : false);
+	Ped peds[100];
+	worldGetAllPeds(peds, sizeof(peds));
+	Vehicle vehs[100];
+	worldGetAllVehicles(vehs, sizeof(vehs));
 
-	Ped ped = PLAYER::PLAYER_PED_ID();
-	ENTITY::SET_ENTITY_INVINCIBLE(ped, player_godmode->state);
-	ENTITY::SET_ENTITY_VISIBLE(ped, !player_invisible->state, false);
+	ENTITY::SET_ENTITY_INVINCIBLE(player_ped, player_godmode->state);
+	ENTITY::SET_ENTITY_VISIBLE(player_ped, !player_invisible->state, false);
 	//hooking::set_player_speedmtp(player_speedmultiplier->slider_get_selected_value());
 	PLAYER::SET_RUN_SPRINT_MULTIPLIER_FOR_PLAYER(player, player_speedmultiplier->slider_get_selected_value());
 
-	Vehicle vehicle = PED::GET_VEHICLE_PED_IS_IN(ped, settings_selectlastvehicle->state ? true : false);
-	if (ENTITY::DOES_ENTITY_EXIST(vehicle))
+	if (ENTITY::DOES_ENTITY_EXIST(player_veh))
 	{
-		ENTITY::SET_ENTITY_INVINCIBLE(vehicle, vehicle_invincible->state ? true : false);
-		float r = vehicle_color_red->slider_get_selected_value(), g = vehicle_color_green->slider_get_selected_value(), b = vehicle_color_blue->slider_get_selected_value();
-		VEHICLE::SET_VEHICLE_CUSTOM_PRIMARY_COLOUR(vehicle, (int) r, (int) g, (int) b);
-		VEHICLE::SET_VEHICLE_CUSTOM_SECONDARY_COLOUR(vehicle, (int) r, (int) g, (int) b);
+		ENTITY::SET_ENTITY_INVINCIBLE(player_veh, vehicle_invincible->state ? true : false);
 	}
 
 	if (time_freeze->state)
 	{
 		set_time();
+	}
+	
+	for (Ped ped : peds)
+	{
+		if (ped == player_ped)
+		{
+			continue;
+		}
+
+		if (world_killallpeds->state)
+		{
+			ENTITY::SET_ENTITY_HEALTH(ped, 0.f);
+		}
+
+		if (world_removeallpeds->state)
+		{
+			ENTITY::SET_PED_AS_NO_LONGER_NEEDED(&ped);
+			NETWORK::NETWORK_FADE_OUT_ENTITY(ped, true, true);
+		}
+	}
+
+	for (Vehicle veh : vehs)
+	{
+		if (veh == player_veh)
+		{
+			continue;
+		}
+
+		if (world_killallengines->state)
+		{
+			VEHICLE::SET_VEHICLE_ENGINE_HEALTH(veh, 0.f);
+		}
+
+		if (world_removeallvehicles->state)
+		{
+			ENTITY::SET_VEHICLE_AS_NO_LONGER_NEEDED(&veh);
+			NETWORK::NETWORK_FADE_OUT_ENTITY(veh, true, true);
+		}
 	}
 }
 
@@ -146,7 +214,7 @@ static void init_menus()
 	main_menu->add_item(new menu_item("ONLINE", online_menu));
 	main_menu->add_item(new menu_item("PLAYER", player_menu));
 	main_menu->add_item(new menu_item("VEHICLE", vehicle_menu));
-	main_menu->add_item(new menu_item("PROPS"));
+	main_menu->add_item(new menu_item("PROPS / PEDS"));
 	main_menu->add_item(new menu_item("WORLD", world_menu));
 	main_menu->add_item(new menu_item("MISC", misc_menu));
 	pool.add_menu(main_menu);
@@ -183,7 +251,9 @@ static void init_menus()
 	vehicle_color_menu->add_item(vehicle_color_green);
 	vehicle_color_blue = new menu_item("Blue", color_values);
 	vehicle_color_menu->add_item(vehicle_color_blue);
+	vehicle_color_menu->add_item(vehicle_color_apply);
 	pool.add_menu(vehicle_color_menu);
+	vehicle_menu->add_item(vehicle_repair);
 	vehicle_menu->add_item(vehicle_invincible);
 	pool.add_menu(vehicle_menu);
 
@@ -201,10 +271,14 @@ static void init_menus()
 	world_time_menu->add_item(time_apply);
 	world_time_menu->add_item(time_freeze);
 	pool.add_menu(world_time_menu);
+	world_menu->add_item(world_killallpeds);
+	world_menu->add_item(world_removeallpeds);
+	world_menu->add_item(world_killallengines);
+	world_menu->add_item(world_removeallvehicles);
 	pool.add_menu(world_menu);
 
 	misc_menu->add_item(new menu_item("Settings", misc_settings_menu));
-	misc_settings_menu->add_item(settings_selectlastvehicle);
+	misc_settings_menu->add_item(misc_settings_selectlastvehicle);
 	pool.add_menu(misc_settings_menu);
 	pool.add_menu(misc_menu);
 }

@@ -23,7 +23,7 @@ struct menu_item
 
 	const char *label;
 	const menu_item_type type;
-	int values_index;
+	uint values_index;
 	bool hovered = false;
 	bool selected = false;
 	union
@@ -52,8 +52,8 @@ public:
 
 private:
 	std::vector<menu_item*> menu_items;
-	int cursor;
-	int visibleTime;
+	uint cursor;
+	uint visibleTime;
 	menu_item *selected_item;
 
 	void draw_header() const;

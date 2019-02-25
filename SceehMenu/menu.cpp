@@ -119,7 +119,7 @@ void menu::handle_keyboard(DWORD key)
 		}
 		else
 		{
-			cursor = (int) menu_items.size() - 1;
+			cursor = menu_items.size() - 1;
 		}
 		util::play_sound("NAV", "HUD_AMMO_SHOP_SOUNDSET");
 		break;
@@ -204,14 +204,26 @@ void menu::handle_keyboard(DWORD key)
 
 void menu::draw_header() const
 {
-	GRAPHICS::DRAW_RECT(MENU_POS_X, MENU_POS_Y, MENU_WIDTH, MENU_HEADER_HEIGHT, 80, 80, 255, 230);
+	// Rainbowy
+	static ULONG cnt = 0;
+	static float freq = .01f;
+	GRAPHICS::DRAW_RECT(MENU_POS_X, MENU_POS_Y, MENU_WIDTH, MENU_HEADER_HEIGHT, std::sin(freq * cnt) * 127 + 128, std::sin(freq * cnt + 2) * 127 + 128, std::sin(freq * cnt + 4) * 127 + 128, 230);
+	if (++cnt >= (ULONG) - 1)
+	{
+		cnt = 0;
+	}
+
 	util::draw_text(MENU_POS_X, MENU_POS_Y - MENU_HEADER_HEIGHT / 3, 1.5f, title);
+	if (parent)
+	{
+		util::draw_text(MENU_POS_X - MENU_WIDTH / 3, MENU_POS_Y - MENU_HEADER_HEIGHT / 3, 1.5f, "<");
+	}
 }
 
 void menu::draw_items() const
 {
 	float new_y = MENU_POS_Y + MENU_HEADER_HEIGHT / 2 + MENU_ITEM_HEIGHT / 2;
-	int items_size = (int) menu_items.size();
+	uint items_size = menu_items.size();
 	int bottom_dist = items_size - 1 - cursor;
 	bool capped_up = cursor > MENU_MAX_VISIBLE;
 	bool capped_down = bottom_dist > MENU_MAX_VISIBLE;
@@ -223,7 +235,7 @@ void menu::draw_items() const
 	}
 	for (int i = 0; i < items_size; i++)
 	{
-		if (i < cursor - MENU_MAX_VISIBLE - (!capped_down ? MENU_MAX_VISIBLE - bottom_dist : 0) || i > cursor + MENU_MAX_VISIBLE + (!capped_up ? MENU_MAX_VISIBLE - cursor : 0))
+		if (i < (int) cursor - MENU_MAX_VISIBLE - (!capped_down ? MENU_MAX_VISIBLE - bottom_dist : 0) || i > cursor + MENU_MAX_VISIBLE + (!capped_up ? MENU_MAX_VISIBLE - cursor : 0))
 			continue;
 
 		menu_item *item = menu_items[i];
