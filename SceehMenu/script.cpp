@@ -208,6 +208,7 @@ static void tick()
 		}
 		if (world_removeallpeds->state)
 		{
+			ENTITY::SET_ENTITY_AS_MISSION_ENTITY(ped, true, true);
 			PED::DELETE_PED(&ped);
 		}
 	}
@@ -225,6 +226,7 @@ static void tick()
 		}
 		if (world_removeallvehicles->state)
 		{
+			ENTITY::SET_ENTITY_AS_MISSION_ENTITY(veh, true, true);
 			VEHICLE::DELETE_VEHICLE(&veh);
 		}
 	}
@@ -255,11 +257,23 @@ static void init_menus()
 	pool.add_menu(player_menu);
 
 	vehicle_menu->add_item(new menu_item("Spawn Vehicle", vehicle_spawn_menu));
+	std::vector<menu*> vehicle_spawn_categories_menus;
+	for (UCHAR i = 0; i < 22; i++)
+	{
+		char buffer[13];
+		sprintf_s(buffer, "VEH_CLASS_%d", i);
+		char *label = UI::_GET_LABEL_TEXT(buffer);
+		menu *category_menu = new menu(label);
+		pool.add_menu(category_menu);
+		vehicle_spawn_categories_menus.push_back(category_menu);
+		vehicle_spawn_menu->add_item(new menu_item(label, category_menu));
+	}
 	for (Hash veh_hash : vehicle_list)
 	{
 		char *display_name = VEHICLE::GET_DISPLAY_NAME_FROM_VEHICLE_MODEL(veh_hash);
-		menu_item *item = new menu_item(display_name);
-		vehicle_spawn_menu->add_item(item);
+		char *label = UI::_GET_LABEL_TEXT(display_name);
+		menu_item *item = new menu_item(label);
+		vehicle_spawn_categories_menus[VEHICLE::GET_VEHICLE_CLASS_FROM_NAME(veh_hash)]->add_item(item);
 		vehicle_spawn_items.push_back(item);
 	}
 	pool.add_menu(vehicle_spawn_menu);

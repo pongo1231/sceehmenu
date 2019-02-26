@@ -9,13 +9,13 @@
 #define MENU_ITEM_HEIGHT .05f
 #define MENU_MAX_VISIBLE 5
 
-menu_item::menu_item(const char *label) : label(label), type(MENU_ITEM_TYPE_ACTION) {}
+menu_item::menu_item(std::string label) : label(label), type(MENU_ITEM_TYPE_ACTION) {}
 
-menu_item::menu_item(const char *label, bool state) : label(label), state(state), type(MENU_ITEM_TYPE_TOGGLE) {}
+menu_item::menu_item(std::string label, bool state) : label(label), state(state), type(MENU_ITEM_TYPE_TOGGLE) {}
 
-menu_item::menu_item(const char *label, menu *submenu) : label(label), submenu(submenu), type(MENU_ITEM_TYPE_SUBMENU) {}
+menu_item::menu_item(std::string label, menu *submenu) : label(label), submenu(submenu), type(MENU_ITEM_TYPE_SUBMENU) {}
 
-menu_item::menu_item(const char *label, std::vector<float> values, int default_index) : label(label), values(values), values_index(default_index), type(MENU_ITEM_TYPE_SLIDER) {}
+menu_item::menu_item(std::string label, std::vector<float> values, int default_index) : label(label), values(values), values_index(default_index), type(MENU_ITEM_TYPE_SLIDER) {}
 
 menu_item::menu_item(const menu_item &other) : label(other.label), type(other.type)
 {
@@ -51,7 +51,7 @@ float menu_item::slider_get_selected_value() const
 
 
 
-menu::menu(const char *title) : title(title) {}
+menu::menu(std::string title) : title(title) {}
 
 menu::~menu()
 {
@@ -213,7 +213,7 @@ void menu::draw_header() const
 		cnt = 0;
 	}
 
-	util::draw_text(MENU_POS_X, MENU_POS_Y - MENU_HEADER_HEIGHT / 3, 1.5f, title);
+	util::draw_text(MENU_POS_X, MENU_POS_Y - MENU_HEADER_HEIGHT / 3, 1.5f, title.c_str());
 	if (parent)
 	{
 		util::draw_text(MENU_POS_X - MENU_WIDTH / 3, MENU_POS_Y - MENU_HEADER_HEIGHT / 3, 1.5f, "<");
@@ -269,7 +269,7 @@ void menu::draw_items() const
 			util::draw_text(MENU_POS_X + MENU_WIDTH / 3, new_y - MENU_ITEM_HEIGHT / 3, 1.f, buffer, 100, 100, 255);
 			break;
 		}
-		util::draw_text(MENU_POS_X, new_y - MENU_ITEM_HEIGHT / 3, 1.f, item->label, r, g, b);
+		util::draw_text(MENU_POS_X, new_y - MENU_ITEM_HEIGHT / 3, 1.f, item->label.c_str(), r, g, b);
 
 		new_y += MENU_ITEM_HEIGHT;
 	}

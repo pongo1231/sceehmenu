@@ -13,15 +13,15 @@ enum menu_item_type
 
 struct menu_item
 {
-	menu_item(const char *label);
-	menu_item(const char *label, bool state);
-	menu_item(const char *label, menu *submenu);
-	menu_item(const char *label, std::vector<float> values, int default_index = 0);
+	menu_item(std::string label);
+	menu_item(std::string label, bool state);
+	menu_item(std::string label, menu *submenu);
+	menu_item(std::string label, std::vector<float> values, int default_index = 0);
 	menu_item(const menu_item &other);
 	menu_item operator =(const menu_item &other);
 	~menu_item();
 
-	const char *label;
+	const std::string label;
 	const menu_item_type type;
 	uint values_index;
 	bool hovered = false;
@@ -39,11 +39,11 @@ struct menu_item
 class menu
 {
 public:
-	const char *title;
+	const std::string title;
 	bool visible = false;
 	menu *parent;
 
-	menu(const char *title);
+	menu(std::string title);
 	~menu();
 	void add_item(menu_item *item);
 	void clear_items();
