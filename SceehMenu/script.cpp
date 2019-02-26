@@ -33,6 +33,8 @@ menu_item *vehicle_color_blue;
 menu_item *vehicle_color_apply = new menu_item("Apply Color");
 menu_item *vehicle_repair = new menu_item("Repair");
 menu_item *vehicle_invincible = new menu_item("Invincible", false);
+menu_item *vehicle_enginemultiplier = new menu_item("Engine Multiplier", std::vector<float>({ 1.f, 2.f, 5.f, 10.f, 20.f, 50.f, 100.f, 200.f, 500.f, 1000.f, 2000.f, 5000.f, 10000.f }));
+menu_item *vehicle_torquemultiplier = new menu_item("Torque Multiplier", std::vector<float>({ 1.f, 2.f, 5.f, 10.f, 20.f, 50.f, 100.f, 200.f, 500.f, 1000.f, 2000.f, 5000.f, 10000.f }));
 
 menu *world_menu = new menu("World");
 menu *world_time_menu = new menu("Time (Local)");
@@ -303,11 +305,18 @@ static void tick()
 	if (ENTITY::DOES_ENTITY_EXIST(player_veh))
 	{
 		ENTITY::SET_ENTITY_INVINCIBLE(player_veh, vehicle_invincible->state ? true : false);
+		VEHICLE::_SET_VEHICLE_ENGINE_POWER_MULTIPLIER(player_veh, vehicle_enginemultiplier->slider_get_selected_value());
+		VEHICLE::_SET_VEHICLE_ENGINE_TORQUE_MULTIPLIER(player_veh, vehicle_torquemultiplier->slider_get_selected_value());
 	}
 
 	if (time_freeze->state)
 	{
 		set_time();
+	}
+	frozen_weather = world_weather_freeze->state;
+	if (!frozen_weather)
+	{
+		GAMEPLAY::CLEAR_OVERRIDE_WEATHER();
 	}
 	
 	for (Ped ped : peds)
@@ -344,12 +353,6 @@ static void tick()
 			ENTITY::SET_ENTITY_AS_MISSION_ENTITY(veh, true, true);
 			VEHICLE::DELETE_VEHICLE(&veh);
 		}
-	}
-
-	frozen_weather = world_weather_freeze->state;
-	if (!frozen_weather)
-	{
-		GAMEPLAY::CLEAR_OVERRIDE_WEATHER();
 	}
 }
 
@@ -416,6 +419,8 @@ static void init_menus()
 	pool.add_menu(vehicle_color_menu);
 	vehicle_menu->add_item(vehicle_repair);
 	vehicle_menu->add_item(vehicle_invincible);
+	vehicle_menu->add_item(vehicle_enginemultiplier);
+	vehicle_menu->add_item(vehicle_torquemultiplier);
 	pool.add_menu(vehicle_menu);
 
 	world_menu->add_item(new menu_item("Time (Local)", world_time_menu));
