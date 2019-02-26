@@ -213,7 +213,7 @@ void menu::draw_header() const
 		cnt = 0;
 	}
 
-	util::draw_text(MENU_POS_X, MENU_POS_Y - MENU_HEADER_HEIGHT / 3, 1.5f, title.c_str());
+	util::draw_text(MENU_POS_X, MENU_POS_Y - MENU_HEADER_HEIGHT / 3, 1.5f, title);
 	if (parent)
 	{
 		util::draw_text(MENU_POS_X - MENU_WIDTH / 3, MENU_POS_Y - MENU_HEADER_HEIGHT / 3, 1.5f, "<");
@@ -269,7 +269,7 @@ void menu::draw_items() const
 			util::draw_text(MENU_POS_X + MENU_WIDTH / 3, new_y - MENU_ITEM_HEIGHT / 3, 1.f, buffer, 100, 100, 255);
 			break;
 		}
-		util::draw_text(MENU_POS_X, new_y - MENU_ITEM_HEIGHT / 3, 1.f, item->label.c_str(), r, g, b);
+		util::draw_text(MENU_POS_X, new_y - MENU_ITEM_HEIGHT / 3, 1.f, item->label, r, g, b);
 
 		new_y += MENU_ITEM_HEIGHT;
 	}
