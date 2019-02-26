@@ -18,5 +18,6 @@
     <ClInclude Include="stdafx.h" />
     <ClInclude Include="hooking.h" />
     <ClInclude Include="vehicle_list.h" />
+    <ClInclude Include="weapon_list.h" />
   </ItemGroup>
 </Project>

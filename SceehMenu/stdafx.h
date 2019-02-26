@@ -1,5 +1,6 @@
 #pragma once
 #include "vehicle_list.h"
+#include "weapon_list.h"
 #include "scripthookv/inc/main.h"
 #include "scripthookv/inc/natives.h"
 #include <Windows.h>

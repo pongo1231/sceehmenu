@@ -2,7 +2,6 @@
 #include "script.h"
 #include "util.h"
 #include "hooking.h"
-#include "vehicle_list.h"
 
 bool block_next_input = false;
 menu_pool pool;
@@ -14,6 +13,11 @@ menu *playerlist_menu = new menu("Players");
 menu_item *online_kickall = new menu_item("Kick All");
 
 menu *player_menu = new menu("Player");
+menu *weapons_menu = new menu("Weapons");
+menu_item *weapons_infiniteammo = new menu_item("Infinite Ammo", false);
+menu_item *weapons_infiniteclip = new menu_item("Infinite Clip", false);
+menu_item *weapons_giveall = new menu_item("Give All Weapons");
+menu_item *weapons_removeall = new menu_item("Remove All Weapons");
 menu_item *player_godmode = new menu_item("Godmode", false);
 menu_item *player_invisible = new menu_item("Invisibility", false);
 menu_item *player_refillhealth = new menu_item("Refill Health");
@@ -35,6 +39,9 @@ menu_item *vehicle_repair = new menu_item("Repair");
 menu_item *vehicle_invincible = new menu_item("Invincible", false);
 menu_item *vehicle_enginemultiplier = new menu_item("Engine Multiplier", std::vector<float>({ 1.f, 2.f, 5.f, 10.f, 20.f, 50.f, 100.f, 200.f, 500.f, 1000.f, 2000.f, 5000.f, 10000.f }));
 menu_item *vehicle_torquemultiplier = new menu_item("Torque Multiplier", std::vector<float>({ 1.f, 2.f, 5.f, 10.f, 20.f, 50.f, 100.f, 200.f, 500.f, 1000.f, 2000.f, 5000.f, 10000.f }));
+menu_item *vehicle_drift = new menu_item("Drift", false);
+bool drift_state = false;
+UCHAR drift_tick = 1;
 
 menu *world_menu = new menu("World");
 menu *world_time_menu = new menu("Time (Local)");
@@ -67,6 +74,7 @@ menu_item *world_removeallvehicles = new menu_item("Remove All Vehicles", false)
 menu *misc_menu = new menu("Misc");
 menu *misc_settings_menu = new menu("Settings");
 menu_item *misc_settings_selectlastvehicle = new menu_item("Select Last Vehicle", false);
+menu_item *misc_rottenv = new menu_item("RottenV", false);
 
 static void playerlist_update()
 {
@@ -162,6 +170,17 @@ static void check_for_selections()
 		}
 		PLAYER::SET_PLAYER_WANTED_LEVEL(player, wanted_level, true);
 		PLAYER::SET_PLAYER_WANTED_LEVEL_NOW(player, true);
+	}
+	else if (weapons_giveall->selected)
+	{
+		for (Hash wep_hash : weapon_list)
+		{
+			WEAPON::GIVE_WEAPON_TO_PED(player_ped, wep_hash, (int) - 0, false, false);
+		}
+	}
+	else if (weapons_removeall->selected)
+	{
+		WEAPON::REMOVE_ALL_PED_WEAPONS(player_ped, false);
 	}
 
 	if (vehicle_color_apply->selected)
@@ -292,6 +311,8 @@ static void tick()
 	Player player = PLAYER::PLAYER_ID();
 	Ped player_ped = PLAYER::PLAYER_PED_ID();
 	Vehicle player_veh = PED::GET_VEHICLE_PED_IS_IN(player_ped, misc_settings_selectlastvehicle->state ? true : false);
+	Hash player_wep;
+	WEAPON::GET_CURRENT_PED_WEAPON(player_ped, &player_wep, true);
 	Ped peds[1000];
 	worldGetAllPeds(peds, sizeof(peds));
 	Vehicle vehs[1000];
@@ -301,12 +322,24 @@ static void tick()
 	ENTITY::SET_ENTITY_VISIBLE(player_ped, !player_invisible->state, false);
 	//hooking::set_player_speedmtp(player_speedmultiplier->slider_get_selected_value());
 	PLAYER::SET_RUN_SPRINT_MULTIPLIER_FOR_PLAYER(player, player_speedmultiplier->slider_get_selected_value());
+	WEAPON::SET_PED_INFINITE_AMMO(player_ped, weapons_infiniteammo->state, player_wep);
+	WEAPON::SET_PED_INFINITE_AMMO_CLIP(player_ped, weapons_infiniteclip->state);
 
 	if (ENTITY::DOES_ENTITY_EXIST(player_veh))
 	{
 		ENTITY::SET_ENTITY_INVINCIBLE(player_veh, vehicle_invincible->state ? true : false);
 		VEHICLE::_SET_VEHICLE_ENGINE_POWER_MULTIPLIER(player_veh, vehicle_enginemultiplier->slider_get_selected_value());
 		VEHICLE::_SET_VEHICLE_ENGINE_TORQUE_MULTIPLIER(player_veh, vehicle_torquemultiplier->slider_get_selected_value());
+		if (!vehicle_drift->state)
+		{
+			drift_state = false;
+		}
+		else if (--drift_tick == 0)
+		{
+			drift_tick = 3;
+			drift_state = !drift_state;
+		}
+		VEHICLE::SET_VEHICLE_REDUCE_GRIP(player_veh, drift_state);
 	}
 
 	if (time_freeze->state)
@@ -369,9 +402,14 @@ static void init_menus()
 	online_menu->add_item(new menu_item("Players", playerlist_menu));
 	online_menu->add_item(online_kickall);
 	pool.add_menu(online_menu);
-	
 	pool.add_menu(playerlist_menu);
 
+	player_menu->add_item(new menu_item("Weapons", weapons_menu));
+	weapons_menu->add_item(weapons_infiniteammo);
+	weapons_menu->add_item(weapons_infiniteclip);
+	weapons_menu->add_item(weapons_giveall);
+	weapons_menu->add_item(weapons_removeall);
+	pool.add_menu(weapons_menu);
 	player_menu->add_item(player_godmode);
 	player_menu->add_item(player_invisible);
 	player_menu->add_item(player_refillhealth);
@@ -421,6 +459,7 @@ static void init_menus()
 	vehicle_menu->add_item(vehicle_invincible);
 	vehicle_menu->add_item(vehicle_enginemultiplier);
 	vehicle_menu->add_item(vehicle_torquemultiplier);
+	vehicle_menu->add_item(vehicle_drift);
 	pool.add_menu(vehicle_menu);
 
 	world_menu->add_item(new menu_item("Time (Local)", world_time_menu));
@@ -462,6 +501,7 @@ static void init_menus()
 	misc_menu->add_item(new menu_item("Settings", misc_settings_menu));
 	misc_settings_menu->add_item(misc_settings_selectlastvehicle);
 	pool.add_menu(misc_settings_menu);
+	misc_menu->add_item(misc_rottenv);
 	pool.add_menu(misc_menu);
 }
 

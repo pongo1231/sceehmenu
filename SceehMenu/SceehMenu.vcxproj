@@ -38,6 +38,7 @@
     <ClInclude Include="stdafx.h" />
     <ClInclude Include="util.h" />
     <ClInclude Include="vehicle_list.h" />
+    <ClInclude Include="weapon_list.h" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>15.0</VCProjectVersion>
