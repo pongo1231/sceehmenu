@@ -41,6 +41,22 @@ menu_item *time_minute;
 menu_item *time_second;
 menu_item *time_apply = new menu_item("Apply Time");
 menu_item *time_freeze = new menu_item("Freeze Time", false);
+menu *world_weather_menu = new menu("Weather (Local)");
+menu_item *world_weather_clear = new menu_item("Sunny");
+menu_item *world_weather_extrasunny = new menu_item("Extra Sunny");
+menu_item *world_weather_clouds = new menu_item("Clouds");
+menu_item *world_weather_overcast = new menu_item("Overcast");
+menu_item *world_weather_rain = new menu_item("Rain");
+menu_item *world_weather_clearing = new menu_item("Clearing (Rain)");
+menu_item *world_weather_thunder = new menu_item("Thunder");
+menu_item *world_weather_smog = new menu_item("Smog (shouldn't LS be always smoggy?)");
+menu_item *world_weather_foggy = new menu_item("Foggy");
+menu_item *world_weather_xmas = new menu_item("Proper Snow (Xmas)");
+menu_item *world_weather_snowlight = new menu_item("Bugged Snow");
+menu_item *world_weather_blizzard = new menu_item("Blizzard");
+menu_item *world_weather_halloween = new menu_item("Halloween");
+menu_item *world_weather_freeze = new menu_item("Freeze Weather", false);
+bool frozen_weather = false;
 menu_item *world_killallpeds = new menu_item("Kill All Peds", false);
 menu_item *world_removeallpeds = new menu_item("Remove All Peds", false);
 menu_item *world_killallengines = new menu_item("Kill All Vehicle Engines", false);
@@ -198,6 +214,71 @@ static void check_for_selections()
 		set_time();
 		return;
 	}
+	else
+	{
+		std::string weather;
+		if (world_weather_clear->selected)
+		{
+			weather = "CLEAR";
+		}
+		else if (world_weather_extrasunny->selected)
+		{
+			weather = "EXTRASUNNY";
+		}
+		else if (world_weather_clouds->selected)
+		{
+			weather = "CLOUDS";
+		}
+		else if (world_weather_overcast->selected)
+		{
+			weather = "OVERCAST";
+		}
+		else if (world_weather_rain->selected)
+		{
+			weather = "RAIN";
+		}
+		else if (world_weather_clearing->selected)
+		{
+			weather = "CLEARING";
+		}
+		else if (world_weather_thunder->selected)
+		{
+			weather = "THUNDER";
+		}
+		else if (world_weather_smog->selected)
+		{
+			weather = "SMOG";
+		}
+		else if (world_weather_foggy->selected)
+		{
+			weather = "FOGGY";
+		}
+		else if (world_weather_xmas->selected)
+		{
+			weather = "XMAS";
+		}
+		else if (world_weather_snowlight->selected)
+		{
+			weather = "SNOWLIGHT";
+		}
+		else if (world_weather_blizzard->selected)
+		{
+			weather = "BLIZZARD";
+		}
+		else if (world_weather_halloween->selected)
+		{
+			weather = "HALLOWEEN";
+		}
+
+		if (!weather.empty())
+		{
+			GAMEPLAY::SET_WEATHER_TYPE_NOW((char*) weather.c_str());
+			if (frozen_weather)
+			{
+				GAMEPLAY::SET_OVERRIDE_WEATHER((char*) weather.c_str());
+			}
+		}
+	}
 }
 
 static void tick()
@@ -263,6 +344,12 @@ static void tick()
 			ENTITY::SET_ENTITY_AS_MISSION_ENTITY(veh, true, true);
 			VEHICLE::DELETE_VEHICLE(&veh);
 		}
+	}
+
+	frozen_weather = world_weather_freeze->state;
+	if (!frozen_weather)
+	{
+		GAMEPLAY::CLEAR_OVERRIDE_WEATHER();
 	}
 }
 
@@ -345,6 +432,22 @@ static void init_menus()
 	world_time_menu->add_item(time_apply);
 	world_time_menu->add_item(time_freeze);
 	pool.add_menu(world_time_menu);
+	world_menu->add_item(new menu_item("Weather (Local)", world_weather_menu));
+	world_weather_menu->add_item(world_weather_clear);
+	world_weather_menu->add_item(world_weather_extrasunny);
+	world_weather_menu->add_item(world_weather_clouds);
+	world_weather_menu->add_item(world_weather_overcast);
+	world_weather_menu->add_item(world_weather_rain);
+	world_weather_menu->add_item(world_weather_clearing);
+	world_weather_menu->add_item(world_weather_thunder);
+	world_weather_menu->add_item(world_weather_smog);
+	world_weather_menu->add_item(world_weather_foggy);
+	world_weather_menu->add_item(world_weather_xmas);
+	world_weather_menu->add_item(world_weather_snowlight);
+	world_weather_menu->add_item(world_weather_blizzard);
+	world_weather_menu->add_item(world_weather_halloween);
+	world_weather_menu->add_item(world_weather_freeze);
+	pool.add_menu(world_weather_menu);
 	world_menu->add_item(world_killallpeds);
 	world_menu->add_item(world_removeallpeds);
 	world_menu->add_item(world_killallengines);
