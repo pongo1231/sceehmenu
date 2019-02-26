@@ -15,6 +15,9 @@ menu_item *online_kickall = new menu_item("Kick All");
 menu *player_menu = new menu("Player");
 menu_item *player_godmode = new menu_item("Godmode", false);
 menu_item *player_invisible = new menu_item("Invisibility", false);
+menu_item *player_refillhealth = new menu_item("Refill Health");
+menu_item *player_refillarmor = new menu_item("Refill Armor");
+menu_item *player_incrementwanted = new menu_item("Increment Wanted Level");
 menu_item *player_speedmultiplier = new menu_item("Speed Multiplier", std::vector<float>({ 1.f, 1.1f, 1.2f, 1.3f, 1.4f, 1.49f }));
 
 menu *vehicle_menu = new menu("Vehicle");
@@ -90,27 +93,15 @@ void spawn_vehicle(int index)
 
 static void check_for_selections()
 {
-	if (time_apply->selected)
-	{
-		set_time();
-		return;
-	}
-
-	for (int i = 0; i < vehicle_spawn_items.size(); i++)
-	{
-		menu_item *item = vehicle_spawn_items[i];
-		if (item->selected)
-		{
-			spawn_vehicle(i);
-			return;
-		}
-	}
+	Player player = PLAYER::PLAYER_ID();
+	Ped player_ped = PLAYER::PLAYER_PED_ID();
+	Vehicle player_veh = PED::GET_VEHICLE_PED_IS_IN(player_ped, misc_settings_selectlastvehicle->state ? true : false);
 
 	if (online_kickall->selected)
 	{
 		for (Player player = 0; player < 31; player++)
 		{
-			if (NETWORK::NETWORK_IS_PLAYER_ACTIVE(player) /*&& player != PLAYER::PLAYER_ID()*/)
+			if (NETWORK::NETWORK_IS_PLAYER_ACTIVE(player) && player != player)
 			{
 				hooking::kick_player(player);
 			}
@@ -119,7 +110,24 @@ static void check_for_selections()
 		return;
 	}
 
-	Vehicle player_veh = PED::GET_VEHICLE_PED_IS_IN(PLAYER::PLAYER_PED_ID(), misc_settings_selectlastvehicle->state ? true : false);
+	if (player_refillhealth->selected)
+	{
+		ENTITY::SET_ENTITY_HEALTH(player_ped, 200);
+	}
+	else if (player_refillarmor->selected)
+	{
+		PED::ADD_ARMOUR_TO_PED(player_ped, 200);
+	}
+	else if (player_incrementwanted->selected)
+	{
+		UCHAR wanted_level = PLAYER::GET_PLAYER_WANTED_LEVEL(player);
+		if (++wanted_level > 5)
+		{
+			wanted_level = 0;
+		}
+		PLAYER::SET_PLAYER_WANTED_LEVEL(player, wanted_level, true);
+		PLAYER::SET_PLAYER_WANTED_LEVEL_NOW(player, true);
+	}
 
 	if (vehicle_color_apply->selected)
 	{
@@ -131,13 +139,30 @@ static void check_for_selections()
 			VEHICLE::SET_VEHICLE_CUSTOM_SECONDARY_COLOUR(player_veh, (UCHAR) r, (UCHAR) g, (UCHAR) b);
 		}
 	}
-
-	if (vehicle_repair->selected)
+	else if (vehicle_repair->selected)
 	{
 		if (ENTITY::DOES_ENTITY_EXIST(player_veh))
 		{
 			VEHICLE::SET_VEHICLE_FIXED(player_veh);
 		}
+	}
+	else
+	{
+		for (int i = 0; i < vehicle_spawn_items.size(); i++)
+		{
+			menu_item *item = vehicle_spawn_items[i];
+			if (item->selected)
+			{
+				spawn_vehicle(i);
+				return;
+			}
+		}
+	}
+
+	if (time_apply->selected)
+	{
+		set_time();
+		return;
 	}
 }
 
@@ -179,13 +204,11 @@ static void tick()
 
 		if (world_killallpeds->state)
 		{
-			ENTITY::SET_ENTITY_HEALTH(ped, 0.f);
+			ENTITY::SET_ENTITY_HEALTH(ped, 0);
 		}
-
 		if (world_removeallpeds->state)
 		{
-			ENTITY::SET_PED_AS_NO_LONGER_NEEDED(&ped);
-			NETWORK::NETWORK_FADE_OUT_ENTITY(ped, true, true);
+			PED::DELETE_PED(&ped);
 		}
 	}
 
@@ -200,11 +223,9 @@ static void tick()
 		{
 			VEHICLE::SET_VEHICLE_ENGINE_HEALTH(veh, 0.f);
 		}
-
 		if (world_removeallvehicles->state)
 		{
-			ENTITY::SET_VEHICLE_AS_NO_LONGER_NEEDED(&veh);
-			NETWORK::NETWORK_FADE_OUT_ENTITY(veh, true, true);
+			VEHICLE::DELETE_VEHICLE(&veh);
 		}
 	}
 }
@@ -227,6 +248,9 @@ static void init_menus()
 
 	player_menu->add_item(player_godmode);
 	player_menu->add_item(player_invisible);
+	player_menu->add_item(player_refillhealth);
+	player_menu->add_item(player_refillarmor);
+	player_menu->add_item(player_incrementwanted);
 	player_menu->add_item(player_speedmultiplier);
 	pool.add_menu(player_menu);
 
